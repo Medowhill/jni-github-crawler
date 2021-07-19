@@ -1,0 +1,6 @@
+target/
+token
+.DS_Store
+.metals
+metals.sbt
+.bloop
