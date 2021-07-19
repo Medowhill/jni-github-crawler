@@ -29,10 +29,9 @@ object Main {
 
   def getRepositories(page: Int, lang: String): List[Repository] = {
     if (isFirst) isFirst = false else Thread.sleep(sleepSeconds * 1000)
-    val url = s"https://github.com/search?o=desc&p=$page&q=$lang&s=stars&type=Repositories"
-    (browser.parseString(get(url)) >>
-      elementList(".v-align-middle") >?>
-      attr("href")("a")).flatten.map(Repository)
+    val url = s"https://api.github.com/search/repositories?order=desc&page=$page&q=language:$lang&sort=stars"
+    get(url, Repository.headers).parseJson.asJsObject.fields("items").asInstanceOf[JsArray].elements.map(
+      (x) => Repository(x.asJsObject.fields("url").asInstanceOf[JsString].value)).toList
   }
 
   def get(url: String, headers: Map[String, String] = Map()): String = {
@@ -55,7 +54,7 @@ case class Repository(href: String) {
   import Repository._
 
   val languages: Map[String, Int] =
-    Main.get(s"https://api.github.com/repos$href/languages", headers)
+    Main.get(s"$href/languages", headers)
       .parseJson
       .asJsObject
       .fields
@@ -74,6 +73,6 @@ case class Repository(href: String) {
 
 case object Repository extends (String => Repository) {
   val headers = Map(
-    "Authorization" -> s"token ${scala.io.Source.fromFile("token").mkString}"
+    "Authorization" -> s"token ${scala.io.Source.fromFile("token").mkString.trim}"
   )
 }
